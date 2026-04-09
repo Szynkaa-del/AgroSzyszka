@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>AgroSzyszka</title>
+</head>
+<body>
+<h1>AgroSzyszka – Twoje zadania</h1>
+
+<button onclick="initPush()">Włącz powiadomienia</button>
+
+<h2>Dzisiejsze zadania:</h2>
+<ul>
+{% for task in tasks %}
+<li>{{ task.date }} - {{ task.crop }} - {{ task.name }} - {{ task.type }} {% if task.dose %}- dawka: {{ task.dose }}{% endif %}</li>
+{% endfor %}
+</ul>
+
+<h2>Pogoda w {{ weather.city if weather.city else 'Kraśniku' }}</h2>
+<p>Temperatura: {{ weather.temp }}°C</p>
+<p>Wilgotność: {{ weather.humidity }}%</p>
+
+<!-- Firebase JS SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
+
+// KONFIGURACJA FIREBASE
+const firebaseConfig = {
+  apiKey: "AIzaSyD-YourAPIKeyExample",  // tu wstaw Twój API Key z Firebase Web App
+  authDomain: "agroszyszka.firebaseapp.com",  // Twój Auth Domain
+  projectId: "308210805779",  // Twój Project ID
+  messagingSenderId: "308210805779",  // Twój Messaging Sender ID
+  appId: "1:308210805779:web:exampleappid123"  // Twój App ID
+};
+
+const app = initializeApp(firebaseConfig);
+const messaging = getMessaging(app);
+
+window.initPush = async function () {
+  const permission = await Notification.requestPermission();
+  if(permission === "granted") {
+    const token = await getToken(messaging, { 
+      vapidKey: "BEsa03gby-67f_qHNoPWbcjuixb1kLep1fmDItR42N2COMJi5w7OLuMM2lLozWu8e5ojzaTwDhi6UGw39FTZc98" 
+    });
+    await fetch("/save-token", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({token})
+    });
+    alert("✅ Powiadomienia włączone!");
+  } else {
+    alert("❌ Powiadomienia zablokowane!");
+  }
+};
+
+// odbieranie powiadomień gdy aplikacja jest otwarta
+onMessage(messaging, (payload) => {
+  alert(`Powiadomienie: ${payload.notification.title}\n${payload.notification.body}`);
+});
+</script>
+
+</body>
+</html>
